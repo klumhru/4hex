@@ -20,8 +20,9 @@ type Grid interface {
 	// GetWidth and GetHeight return the dimensions of the grid.
 	GetWidth() int
 	GetHeight() int
-	// GetCells returns a two-dimensional array of cells representing the grid.
-	GetCells() [][]Cell
+	// CopyCellsTo copies the grid's cells into the destination slice.
+	// It returns an error if the destination slice has incorrect dimensions.
+	CopyCellsTo(destination [][]Cell) error
 }
 
 // concreteGrid implements the Grid interface.
@@ -68,8 +69,30 @@ func (g *concreteGrid) GetWidth() int {
 func (g *concreteGrid) GetHeight() int {
 	return g.height
 }
-func (g *concreteGrid) GetCells() [][]Cell {
-	return g.cells
+
+// CopyCellsTo copies the grid's cells into the destination slice.
+// It returns an error if the destination slice has incorrect dimensions or is nil.
+func (g *concreteGrid) CopyCellsTo(destination [][]Cell) error {
+	if destination == nil {
+		return fmt.Errorf("destination slice cannot be nil")
+	}
+	if len(destination) != g.height {
+		return fmt.Errorf("destination has %d rows, expected %d", len(destination), g.height)
+	}
+	for r := 0; r < g.height; r++ {
+		if destination[r] == nil {
+			// Or alternatively, initialize it: destination[r] = make([]Cell, g.width)
+			// For now, requiring pre-initialized rows.
+			return fmt.Errorf("destination row %d cannot be nil, expected a pre-initialized row of width %d", r, g.width)
+		}
+		if len(destination[r]) != g.width {
+			return fmt.Errorf("destination row %d has %d columns, expected %d", r, len(destination[r]), g.width)
+		}
+		for q := 0; q < g.width; q++ {
+			destination[r][q] = g.cells[r][q]
+		}
+	}
+	return nil
 }
 
 // NewGrid creates a new Grid with the specified position, name, width, height, and cells.

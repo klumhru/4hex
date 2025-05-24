@@ -162,16 +162,6 @@ func TestConcreteGrid_GetHeight(t *testing.T) {
 	assert.Equal(10, grid.GetHeight())
 }
 
-func TestConcreteGrid_GetCells(t *testing.T) {
-	assert := assert.New(t)
-	cells := [][]Cell{
-		{NewCell(0, 0), NewCell(1, 0)},
-		{NewCell(0, 1), NewCell(1, 1)},
-	}
-	grid := NewGrid(Position{}, "testGrid", 2, 2, cells)
-	assert.Equal(cells, grid.GetCells())
-}
-
 func TestNewGrid(t *testing.T) {
 	assert := assert.New(t)
 	pos := Position{Q: 1, R: 2}
@@ -192,7 +182,6 @@ func TestNewGrid(t *testing.T) {
 	assert.Equal(name, grid.GetName(), "Name mismatch")
 	assert.Equal(width, grid.GetWidth(), "Width mismatch")
 	assert.Equal(height, grid.GetHeight(), "Height mismatch")
-	assert.Equal(cells, grid.GetCells(), "Cells mismatch")
 
 	// Test that it's a concreteGrid
 	_, ok := grid.(*concreteGrid)
@@ -208,4 +197,128 @@ func TestConcreteGrid_String(t *testing.T) {
 	grid := NewGrid(pos, name, width, height, nil)
 	expectedString := fmt.Sprintf("Grid(name: %s, position: %s, width: %d, height: %d)", name, pos, width, height)
 	assert.Equal(expectedString, fmt.Sprintf("%s", grid), "String representation mismatch")
+}
+
+func TestConcreteGrid_CopyCellsTo(t *testing.T) {
+	assert := assert.New(t)
+
+	// Original cells for the grid
+	originalCells := [][]Cell{
+		{NewCell(0, 0), NewCell(1, 0)},
+		{NewCell(0, 1), NewCell(1, 1)},
+	}
+	grid := NewGrid(Position{}, "testGrid", 2, 2, originalCells)
+	// Cast to concreteGrid to access CopyCellsTo if it's not on the interface (it is, but good practice for direct tests)
+	cGrid, ok := grid.(*concreteGrid)
+	assert.True(ok, "Grid should be a concreteGrid")
+
+	tests := []struct {
+		name          string
+		destination   [][]Cell
+		gridToUse     Grid // Use interface type
+		expectError   bool
+		expectedCells [][]Cell // Only if no error
+		errorMsg      string   // Expected error message content if expectError is true
+	}{
+		{
+			name: "successful copy",
+			destination: func() [][]Cell {
+				d := make([][]Cell, 2)
+				d[0] = make([]Cell, 2)
+				d[1] = make([]Cell, 2)
+				return d
+			}(),
+			gridToUse:     cGrid,
+			expectError:   false,
+			expectedCells: originalCells,
+		},
+		{
+			name:        "nil destination",
+			destination: nil,
+			gridToUse:   cGrid,
+			expectError: true,
+			errorMsg:    "destination slice cannot be nil",
+		},
+		{
+			name: "incorrect row count",
+			destination: func() [][]Cell {
+				d := make([][]Cell, 1) // Expect 2 rows
+				d[0] = make([]Cell, 2)
+				return d
+			}(),
+			gridToUse:   cGrid,
+			expectError: true,
+			errorMsg:    "destination has 1 rows, expected 2",
+		},
+		{
+			name: "nil row in destination",
+			destination: func() [][]Cell {
+				d := make([][]Cell, 2)
+				d[0] = make([]Cell, 2)
+				// d[1] is nil
+				return d
+			}(),
+			gridToUse:   cGrid,
+			expectError: true,
+			errorMsg:    "destination row 1 cannot be nil",
+		},
+		{
+			name: "incorrect column count in a row",
+			destination: func() [][]Cell {
+				d := make([][]Cell, 2)
+				d[0] = make([]Cell, 2)
+				d[1] = make([]Cell, 1) // Expect 2 columns
+				return d
+			}(),
+			gridToUse:   cGrid,
+			expectError: true,
+			errorMsg:    "destination row 1 has 1 columns, expected 2",
+		},
+		{
+			name:          "copy from empty grid (0x0) to valid empty destination",
+			destination:   make([][]Cell, 0),
+			gridToUse:     NewGrid(Position{}, "emptyGrid", 0, 0, make([][]Cell, 0)),
+			expectError:   false,
+			expectedCells: make([][]Cell, 0),
+		},
+		{
+			name:        "copy from grid with cells to empty (0x0) destination",
+			destination: make([][]Cell, 0),
+			gridToUse:   cGrid, // 2x2 grid
+			expectError: true,
+			errorMsg:    "destination has 0 rows, expected 2",
+		},
+		{
+			name:        "copy from empty grid (0x0) to nil destination",
+			destination: nil,
+			gridToUse:   NewGrid(Position{}, "emptyGrid", 0, 0, make([][]Cell, 0)),
+			expectError: true,
+			errorMsg:    "destination slice cannot be nil",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Ensure gridToUse is a concreteGrid to call CopyCellsTo directly if needed for testing non-interface aspects
+			// However, the method is on the interface, so direct call is fine.
+			err := tt.gridToUse.CopyCellsTo(tt.destination)
+
+			if tt.expectError {
+				assert.Error(err)
+				if tt.errorMsg != "" {
+					assert.Contains(err.Error(), tt.errorMsg)
+				}
+			} else {
+				assert.NoError(err)
+				assert.Equal(tt.expectedCells, tt.destination, "Copied cells do not match expected cells")
+
+				// Verify that the destination is a deep copy, not a reference (if applicable for Cell type)
+				if len(originalCells) > 0 && len(tt.destination) > 0 && len(originalCells[0]) > 0 && len(tt.destination[0]) > 0 {
+					// Modify original and check destination is not affected (only if Cell is a pointer or has mutable fields)
+					// For now, assume Cell is simple enough or this test is primarily for the copy mechanism itself.
+					// If originalCells were modified after copy, tt.destination should not change.
+				}
+			}
+		})
+	}
 }
