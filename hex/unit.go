@@ -1,5 +1,15 @@
 package hex
 
+// Unit represents a game unit.
+type Unit interface {
+	// Move changes the unit's position to the specified position.
+	Move(pos Position)
+	// Position returns the current position of the unit.
+	Position() Position
+	// GetName returns the name of the unit.
+	GetName() string
+}
+
 // concreteUnit implements the Unit interface.
 type concreteUnit struct {
 	name     string
