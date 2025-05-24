@@ -6,8 +6,6 @@ import (
 
 	"github.com/klumhru/4hex/game"
 	"github.com/klumhru/4hex/hex"
-	"github.com/klumhru/4hex/player"
-	"github.com/klumhru/4hex/unit"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,13 +24,13 @@ func Test_GameInitialization(t *testing.T) {
 		gameInstance.SetMap(m)
 
 		// Create a new player
-		p := player.NewPlayer("Player 1")
+		p := game.NewPlayer("Player 1")
 
 		// Add the player to the game
 		gameInstance.AddPlayer(p)
 
 		// Create a new unit
-		warrior := unit.NewUnit("Warrior", p)
+		warrior := hex.NewUnit("Warrior")
 
 		// Add the unit to the player's army
 		p.AddUnit(warrior)
