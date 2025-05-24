@@ -28,15 +28,23 @@ func (m *concreteMap) GetDimensions() (int, int) {
 }
 
 func (m *concreteMap) GetGrids() []Grid {
-	return nil // Placeholder for actual grid retrieval logic
+	return m.grids
 }
 
 func (m *concreteMap) GetGridByName(name string) (Grid, error) {
-	return nil, nil // Placeholder for actual grid retrieval logic by name
+	for _, grid := range m.grids {
+		if grid.GetName() == name {
+			return grid, nil
+		}
+	}
+	return nil, fmt.Errorf("grid with name %s not found", name)
 }
 
 func (m *concreteMap) GetGridByIndex(index int) (Grid, error) {
-	return nil, nil // Placeholder for actual grid retrieval logic by index
+	if index < 0 || index >= len(m.grids) {
+		return nil, fmt.Errorf("index %d out of bounds", index)
+	}
+	return m.grids[index], nil
 }
 
 func (m *concreteMap) AddGrid(grid Grid) error {
