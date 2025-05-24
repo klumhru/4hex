@@ -5,97 +5,113 @@ import (
 
 	"github.com/klumhru/4hex/hex"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewPlayer(t *testing.T) {
-	assert := assert.New(t)
-	playerName := "PlayerOne"
+	name := "Player1"
+	p := NewPlayer(name)
 
-	player := NewPlayer(playerName)
-	assert.NotNil(player, "NewPlayer should return a non-nil Player instance.")
-
-	cp, ok := player.(*concretePlayer)
-	require.True(t, ok, "NewPlayer should return a *concretePlayer instance.")
-
-	assert.Equal(playerName, cp.name, "Internal name field should be set.")
-	assert.Equal(playerName, cp.GetName(), "GetName() should return the correct name.")
-	assert.Empty(cp.units, "Newly created player should have no units.")
-	assert.Empty(cp.GetUnits(), "GetUnits() should return an empty slice for a new player.")
+	assert.NotNil(t, p, "NewPlayer should not return nil")
+	cp, ok := p.(*concretePlayer)
+	assert.True(t, ok, "NewPlayer should return a concretePlayer")
+	assert.Equal(t, name, cp.GetName(), "GetName should return the correct name")
+	assert.Equal(t, 0, cp.GetUnitCount(), "A new player should have 0 units")
 }
 
 func TestConcretePlayer_AddUnit(t *testing.T) {
-	assert := assert.New(t)
-	player := NewPlayer("TestPlayer").(*concretePlayer) // Assuming NewPlayer works
+	p := NewPlayer("TestPlayer").(*concretePlayer)
+	u1 := hex.NewUnit("Warrior")
+	u2 := hex.NewUnit("Archer")
 
-	unit1 := hex.NewUnit("Warrior")
-	player.AddUnit(unit1)
+	p.AddUnit(u1)
+	assert.Equal(t, 1, p.GetUnitCount(), "Unit count should be 1 after adding one unit")
+	unit, err := p.GetUnitAt(0)
+	assert.NoError(t, err)
+	assert.Equal(t, u1, unit, "GetUnitAt(0) should return the first unit added")
 
-	assert.Len(player.units, 1, "Player should have 1 unit after adding one.")
-	assert.Contains(player.units, unit1, "The added unit should be in the units slice.")
-	assert.Equal(unit1, player.units[0], "The first unit should be the one added.")
-
-	unit2 := hex.NewUnit("Archer")
-	player.AddUnit(unit2)
-
-	assert.Len(player.units, 2, "Player should have 2 units after adding another.")
-	assert.Contains(player.units, unit1, "Unit1 should still be in the units slice.")
-	assert.Contains(player.units, unit2, "Unit2 should be in the units slice.")
-
-	// Test adding nil unit (if this should be handled or if it's assumed valid unit)
-	// Current implementation of AddUnit would append a nil to the slice.
-	// Depending on desired behavior, a check might be needed in AddUnit.
-	// For now, testing current behavior:
-	player.AddUnit(nil)
-	assert.Len(player.units, 3, "Player should have 3 units after adding nil.")
-	assert.Nil(player.units[2], "The third unit should be nil.")
+	p.AddUnit(u2)
+	assert.Equal(t, 2, p.GetUnitCount(), "Unit count should be 2 after adding two units")
+	unit, err = p.GetUnitAt(1)
+	assert.NoError(t, err)
+	assert.Equal(t, u2, unit, "GetUnitAt(1) should return the second unit added")
 }
 
 func TestConcretePlayer_GetName(t *testing.T) {
-	assert := assert.New(t)
-
-	name1 := "Gandalf"
-	player1 := NewPlayer(name1)
-	assert.Equal(name1, player1.GetName(), "GetName() should return the name set at creation.")
-
-	name2 := "Frodo"
-	player2 := NewPlayer(name2)
-	assert.Equal(name2, player2.GetName(), "GetName() should return the name set at creation for a different player.")
+	name := "PlayerX"
+	p := NewPlayer(name).(*concretePlayer)
+	assert.Equal(t, name, p.GetName(), "GetName should return the player's name")
 }
 
-func TestConcretePlayer_GetUnits(t *testing.T) {
-	assert := assert.New(t)
-	player := NewPlayer("TestPlayerGetUnits").(*concretePlayer)
+func TestConcretePlayer_GetUnitCount(t *testing.T) {
+	p := NewPlayer("TestPlayer").(*concretePlayer)
+	assert.Equal(t, 0, p.GetUnitCount(), "Initially, unit count should be 0")
 
-	assert.Empty(player.GetUnits(), "GetUnits() should return an empty slice initially.")
+	u1 := hex.NewUnit("Warrior")
+	p.AddUnit(u1)
+	assert.Equal(t, 1, p.GetUnitCount(), "Unit count should be 1 after adding one unit")
 
-	unit1 := hex.NewUnit("Scout")
-	player.AddUnit(unit1)
+	u2 := hex.NewUnit("Archer")
+	p.AddUnit(u2)
+	assert.Equal(t, 2, p.GetUnitCount(), "Unit count should be 2 after adding two units")
+}
 
-	retrievedUnits1 := player.GetUnits()
-	assert.Len(retrievedUnits1, 1, "GetUnits() should return a slice with 1 unit.")
-	assert.Contains(retrievedUnits1, unit1, "The retrieved slice should contain unit1.")
+func TestConcretePlayer_GetUnitAt(t *testing.T) {
+	p := NewPlayer("TestPlayer").(*concretePlayer)
+	u1 := hex.NewUnit("Warrior")
+	u2 := hex.NewUnit("Archer")
 
-	unit2 := hex.NewUnit("Tank")
-	player.AddUnit(unit2)
+	p.AddUnit(u1)
+	p.AddUnit(u2)
 
-	retrievedUnits2 := player.GetUnits()
-	assert.Len(retrievedUnits2, 2, "GetUnits() should return a slice with 2 units.")
-	assert.Contains(retrievedUnits2, unit1, "The retrieved slice should still contain unit1.")
-	assert.Contains(retrievedUnits2, unit2, "The retrieved slice should contain unit2.")
+	// Test valid indices
+	unit, err := p.GetUnitAt(0)
+	assert.NoError(t, err, "GetUnitAt(0) should not return an error")
+	assert.Equal(t, u1, unit, "GetUnitAt(0) should return the first unit")
 
-	// Test that GetUnits returns a copy of the slice, not a reference to the internal one.
-	// Modifying the returned slice should not affect the player's internal units slice.
-	if len(retrievedUnits2) > 0 {
-		retrievedUnits2[0] = hex.NewUnit("ModifiedUnit") // Modify the copy
-		internalUnits := player.GetUnits()               // Get a fresh copy of internal units
-		assert.NotEqual(retrievedUnits2[0], internalUnits[0], "Modifying the returned slice should not affect the internal units.")
-		assert.Equal(unit1, internalUnits[0], "The first internal unit should still be the original unit1.")
-	}
+	unit, err = p.GetUnitAt(1)
+	assert.NoError(t, err, "GetUnitAt(1) should not return an error")
+	assert.Equal(t, u2, unit, "GetUnitAt(1) should return the second unit")
 
-	// Test GetUnits after adding a nil unit
-	player.AddUnit(nil)
-	retrievedUnits3 := player.GetUnits()
-	assert.Len(retrievedUnits3, 3, "GetUnits() should return 3 units after adding nil.")
-	assert.Nil(retrievedUnits3[2], "The third unit in the retrieved slice should be nil.")
+	// Test invalid indices
+	_, err = p.GetUnitAt(-1)
+	assert.Error(t, err, "GetUnitAt(-1) should return an error for negative index")
+
+	_, err = p.GetUnitAt(2)
+	assert.Error(t, err, "GetUnitAt(2) should return an error for out-of-bounds index")
+
+	// Test with no units
+	pEmpty := NewPlayer("EmptyPlayer").(*concretePlayer)
+	_, err = pEmpty.GetUnitAt(0)
+	assert.Error(t, err, "GetUnitAt(0) on an empty player should return an error")
+}
+
+func TestConcretePlayer_SetUnitAt(t *testing.T) {
+	p := NewPlayer("TestPlayer").(*concretePlayer)
+	u1 := hex.NewUnit("Warrior")
+	u2 := hex.NewUnit("Archer")
+	u3 := hex.NewUnit("Mage")
+
+	p.AddUnit(u1)
+	p.AddUnit(u2)
+
+	// Test valid index
+	err := p.SetUnitAt(0, u3)
+	assert.NoError(t, err, "SetUnitAt(0) should not return an error")
+	unit, _ := p.GetUnitAt(0)
+	assert.Equal(t, u3, unit, "GetUnitAt(0) should return the new unit u3")
+
+	unit, _ = p.GetUnitAt(1)
+	assert.Equal(t, u2, unit, "GetUnitAt(1) should still return u2")
+
+	// Test invalid indices
+	err = p.SetUnitAt(-1, u3)
+	assert.Error(t, err, "SetUnitAt(-1) should return an error for negative index")
+
+	err = p.SetUnitAt(2, u3)
+	assert.Error(t, err, "SetUnitAt(2) should return an error for out-of-bounds index")
+
+	// Test with no units
+	pEmpty := NewPlayer("EmptyPlayer").(*concretePlayer)
+	err = pEmpty.SetUnitAt(0, u3)
+	assert.Error(t, err, "SetUnitAt(0) on an empty player should return an error")
 }
