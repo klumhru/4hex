@@ -110,3 +110,6 @@ func NewGrid(position Position, name string, width, height int, cells [][]Cell) 
 func (g *concreteGrid) String() string {
 	return fmt.Sprintf("Grid(name: %s, position: %s, width: %d, height: %d)", g.name, g.position, g.width, g.height)
 }
+
+// GenerateGridFunc is a function type that generates a Grid.
+type GenerateGridFunc func(position Position, name string, width, height int) (Grid, error)

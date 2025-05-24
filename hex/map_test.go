@@ -1,6 +1,7 @@
 package hex
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -300,4 +301,70 @@ func TestGetGridByIndex_Implementation(t *testing.T) {
 
 	_, err = m.GetGridByIndex(-1)
 	assert.Error(err)
+}
+
+func TestConcreteMap_AddLayer(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	m := NewMap(10, 5).(*concreteMap) // 10 width, 5 height
+
+	// Test case 1: Successful layer addition
+	t.Run("Successful AddLayer", func(t *testing.T) {
+		initialGridCount := len(m.grids)
+		generateFunc := func(pos Position, name string, width, height int) (Grid, error) {
+			assert.Equal(Position{}, pos, "Position passed to generate func should be zero")
+			assert.Equal(fmt.Sprintf("Layer_%d", initialGridCount), name, "Name passed to generate func is incorrect")
+			assert.Equal(m.width, width, "Width passed to generate func is incorrect")
+			assert.Equal(m.height, height, "Height passed to generate func is incorrect")
+			// Use the provided width and height to create the grid
+			// Initialize cells for a grid of size width x height
+			cells := make([][]Cell, height)
+			for i := range cells {
+				cells[i] = make([]Cell, width)
+				// Optionally populate with dummy cells if needed for other assertions,
+				// but for dimension checks, nil cells within the rows are fine.
+			}
+			return NewGrid(pos, name, width, height, cells), nil
+		}
+
+		err := m.AddLayer(generateFunc)
+		assert.NoError(err, "AddLayer should not return an error")
+		assert.Len(m.grids, initialGridCount+1, "Map should have one more grid after AddLayer")
+
+		newLayer, err := m.GetGridByIndex(initialGridCount)
+		require.NoError(err)
+		assert.Equal(fmt.Sprintf("Layer_%d", initialGridCount), newLayer.GetName(), "Newly added layer has incorrect name")
+		assert.Equal(m.width, newLayer.GetWidth(), "Newly added layer has incorrect width")
+		assert.Equal(m.height, newLayer.GetHeight(), "Newly added layer has incorrect height")
+	})
+
+	// Test case 2: Nil generate function
+	t.Run("Nil Generate Function", func(t *testing.T) {
+		initialGridCount := len(m.grids)
+		err := m.AddLayer(nil)
+		assert.Error(err, "AddLayer should return an error for nil generate function")
+		assert.Contains(err.Error(), "generate function cannot be nil", "Error message mismatch")
+		assert.Len(m.grids, initialGridCount, "Map grid count should not change after nil generate function")
+	})
+
+	// Test case 3: Generate function returns an error
+	t.Run("Generate Function Returns Error", func(t *testing.T) {
+		initialGridCount := len(m.grids)
+		expectedError := fmt.Errorf("failed to generate grid")
+		generateFuncError := func(pos Position, name string, width, height int) (Grid, error) {
+			return nil, expectedError
+		}
+
+		err := m.AddLayer(generateFuncError)
+		assert.Error(err, "AddLayer should return an error if generate function returns an error")
+		assert.Contains(err.Error(), "failed to generate grid: failed to generate grid", "Error message mismatch")
+		assert.Len(m.grids, initialGridCount, "Map grid count should not change if generate function returns error")
+	})
+
+	// Test case 4: AddGrid returns an error (e.g., trying to add a nil grid, though our generate func won't do this here)
+	// This case is harder to test directly without modifying AddGrid or using a more complex mock.
+	// However, if AddGrid itself is well-tested, we can infer its behavior.
+	// For completeness, if AddGrid could fail for reasons other than nil grid (e.g. max grids), that would be tested here.
+	// Current AddGrid only fails for nil grid, which our successful generateFunc does not produce.
 }

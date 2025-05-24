@@ -14,6 +14,8 @@ type Map interface {
 	RemoveGrid(name string) error
 	// RemoveGridByIndex removes a grid from the map by index.
 	RemoveGridByIndex(index int) error
+	// AddLayer adds a new layer to the map.
+	AddLayer(f GenerateGridFunc) error
 }
 
 // concreteMap implements the Map interface.
