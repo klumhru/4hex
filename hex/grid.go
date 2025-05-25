@@ -1,6 +1,10 @@
 package hex
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/klumhru/4hex/shapes"
+)
 
 // Grid represents a hexagonal grid. It is a two-dimensional array of hexagonal cells.
 // Use grids as layers to create complex maps.
@@ -112,4 +116,4 @@ func (g *concreteGrid) String() string {
 }
 
 // GenerateGridFunc is a function type that generates a Grid.
-type GenerateGridFunc func(position Position, name string, width, height int) (Grid, error)
+type GenerateGridFunc func(shapes.Shape) (Grid, error)
