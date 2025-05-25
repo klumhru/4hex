@@ -153,3 +153,90 @@ func TestTriangle_Flip(t *testing.T) {
 	assert.NoError(err)
 	assert.Equal(Color(7), col)
 }
+
+func TestTriangle_ShouldHaveOnePixelInTop(t *testing.T) {
+	tri := NewTriangle(0, 0, 5, "I")
+	assert := assert.New(t)
+	// The top pixel should be at (2,0)
+	col, err := tri.GetColorAt(2, 0)
+	assert.NoError(err)
+	assert.Equal(Color(0), col) // Default color
+	// Check that no other pixel in row 0 is valid
+	_, err = tri.GetColorAt(1, 0)
+	assert.Error(err)
+	_, err = tri.GetColorAt(3, 0)
+	assert.Error(err)
+	_, err = tri.GetColorAt(4, 0)
+	assert.Error(err)
+}
+
+func TestTriangle_ShuoldHaveAllBottomPixelsFilled(t *testing.T) {
+	tri := NewTriangle(0, 0, 5, "J")
+	assert := assert.New(t)
+	// All pixels in the bottom row (row 4) should be valid
+	for x := 0; x < 5; x++ {
+		col, err := tri.GetColorAt(x, 4)
+		assert.NoError(err)
+		assert.Equal(Color(0), col) // Default color
+	}
+	// Check that no pixel outside the triangle is valid
+	_, err := tri.GetColorAt(-1, 4)
+	assert.Error(err)
+	_, err = tri.GetColorAt(5, 4)
+	assert.Error(err)
+}
+
+func TestTriangle_ShouldHaveSinglePixelInBottomCorners(t *testing.T) {
+	tri := NewTriangle(0, 0, 5, "K")
+	/* Triangle shape should look like this:
+					1
+				1 1 1
+			1 1 1 1 1
+		1 1 1 1 1 1 1
+	1 1 1 1 1 1 1 1 1
+	*/
+	assert := assert.New(t)
+	// Top row should have a single pixel at (2,0)
+	col, err := tri.GetColorAt(2, 0)
+	assert.NoError(err)
+	assert.Equal(Color(0), col) // Default color
+	// Check that no other pixels in the top row are valid
+	_, err = tri.GetColorAt(1, 0)
+	assert.Error(err)
+	_, err = tri.GetColorAt(3, 0)
+	assert.Error(err)
+	_, err = tri.GetColorAt(0, 0)
+	assert.Error(err)
+	_, err = tri.GetColorAt(4, 0)
+	assert.Error(err)
+}
+
+// This test previously assumed NewTriangle created a centered isosceles triangle, but that is now handled by NewIsoscelesTriangle.
+// We update this test to use the correct constructor and clarify the difference.
+func TestTriangle_CenteredIsoscelesShape(t *testing.T) {
+	// This should match the ASCII-art triangle:
+	//     x
+	//    xxx
+	//   xxxxx
+	//  xxxxxxx
+	// xxxxxxxxx
+	tri := NewIsoscelesTriangle(0, 0, 5, "CenteredIsosceles")
+	assert := assert.New(t)
+	for r := 0; r < 5; r++ {
+		for c := 0; c < 9; c++ {
+			if c >= 4-r && c <= 4+r {
+				col, err := tri.GetColorAt(c, r)
+				assert.NoErrorf(err, "Expected valid at (%d,%d)", c, r)
+				assert.Equalf(Color(0), col, "Expected default color at (%d,%d)", c, r)
+			} else {
+				_, err := tri.GetColorAt(c, r)
+				assert.Errorf(err, "Expected error at (%d,%d)", c, r)
+			}
+		}
+	}
+	b := tri.GetBounds()
+	assert.Equal(0, b.X)
+	assert.Equal(0, b.Y)
+	assert.Equal(9, b.Width)
+	assert.Equal(5, b.Height)
+}

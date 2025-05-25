@@ -32,6 +32,27 @@ func NewTriangle(x, y, size int, name string) *Triangle {
 	}
 }
 
+// NewIsoscelesTriangle creates a centered isosceles triangle with a base of 2*height-1 and height 'height'.
+// The top vertex is at (x+height-1, y), and the base is at row y+height-1, spanning columns x to x+2*height-2.
+func NewIsoscelesTriangle(x, y, height int, name string) *Triangle {
+	data := make(map[[2]int]Color)
+	baseWidth := 2*height - 1
+	for row := 0; row < height; row++ {
+		left := x + height - 1 - row
+		right := x + height - 1 + row
+		for col := left; col <= right; col++ {
+			data[[2]int{col, y + row}] = 0 // Default color
+		}
+	}
+	return &Triangle{
+		name:   name,
+		color:  0,
+		bounds: Bounds{X: x, Y: y, Width: baseWidth, Height: height},
+		size:   height, // For isosceles, size is height
+		data:   data,
+	}
+}
+
 var _ Shape = (*Triangle)(nil)
 
 func (t *Triangle) GetBounds() Bounds {

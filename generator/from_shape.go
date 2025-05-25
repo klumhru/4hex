@@ -17,10 +17,13 @@ func GridFromShape(shape shapes.Shape) (hex.Grid, error) {
 		for q := 0; q < b.Width; q++ {
 			if _, err := shape.GetColorAt(b.X+q, b.Y+r); err == nil {
 				cells[r][q] = hex.NewCell(q, r)
+				print("x")
 			} else {
 				cells[r][q] = nil
+				print(" ")
 			}
 		}
+		println()
 	}
 
 	return hex.NewGrid(gridPos, name, b.Width, b.Height, cells), nil
