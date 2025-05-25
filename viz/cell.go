@@ -20,14 +20,14 @@ The cell's position is displayed in the format "Q R", where Q and R are the
 // coordinates of the cell in the grid. The cell is styled using the
 */
 
-const cellTemplate = `
-  ___
- /   \
-|%s|
- \___/
+const cellTemplate = ` _____
+ /     \
+/       \
+\%3d %3d/
+ \_____/
 `
 
-func RenderCell(cell hex.Cell) {
+func RenderCell(cell hex.Cell) string {
 	position := cell.GetPosition()
 	// Using lipgloss to style the cell
 	cellStyle := lipgloss.NewStyle().
@@ -39,7 +39,6 @@ func RenderCell(cell hex.Cell) {
 	cellContent := cellStyle.Render()
 
 	cellContent += "\n" + lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder()).
-		Render(fmt.Sprintf(cellTemplate, fmt.Sprintf("%2d %2d", position.Q, position.R)))
-	println(cellContent)
+		Render(fmt.Sprintf(cellTemplate, position.Q, position.R))
+	return cellContent
 }
