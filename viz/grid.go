@@ -19,11 +19,11 @@ var (
 
 func RenderGrid(grid hex.Grid) {
 	doc := strings.Builder{}
-	rows := make([]string, grid.GetHeight())
+	rows := make([]string, grid.GetWidth())
 
-	for q := 0; q < grid.GetWidth(); q++ {
+	for q := range grid.GetWidth() {
 		cols := make([]string, 0)
-		for r := 0; r < grid.GetHeight(); r++ {
+		for r := range grid.GetHeight() {
 			cell, err := grid.GetCellAt(q, r)
 			if err != nil {
 				// Handle the error, e.g., log it or skip rendering this cell.

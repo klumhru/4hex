@@ -36,6 +36,8 @@ func Run(opts *Options) {
 		shape = shapes.NewSquare(0, 0, size, "TestSquareGrid")
 	case "triangular":
 		shape = shapes.NewTriangle(0, 0, size, "TestTriangularGrid")
+	case "isoceles":
+		shape = shapes.NewIsoscelesTriangle(0, 0, size, "TestIsocelesGrid")
 	default:
 		println("Unsupported shape:", opts.Positional.Shape)
 		return
